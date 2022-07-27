@@ -6,7 +6,9 @@ import zipfile
 import re
 import os
 import shutil
+import ujson
 import uvloop
+from .request import RequestMaker
 
 uvloop.install()
 
@@ -144,9 +146,28 @@ class ReplIt:
                     shutil.rmtree(file_path)
             except Exception as e:
                 await aprint('Failed to delete %s. Reason: %s' % (file_path, e))
-
-
         return tokens
+
+    async def check(self):
+        tokens = open('tokens.txt', 'r').read().splitlines()
+        rm = RequestMaker(headers={'content-type':'application/json', 'user-agent':'Mozilla/5.0 (X11; Linux x86_64; rv:94.0) Gecko/20100101 Firefox/94.0'}, connector=aiohttp.TCPConnector(ssl=False, keepalive_timeout=10000, limit=0, limit_per_host=0), trust_env=False, skip_auto_headers=None, json_serialize=ujson.dumps, auto_decompress=True)
+        async with rm:
+            resp = await rm.request_pool([{"method":"get", "url":"https://discord.com/api/v9/users/@me/library", "headers":{"authorization":f"{token}"}}for token in tokens])
+        # print(results)
+        resp = await rm.response_pool_status_sync(resp)
+        for index, status in enumerate(resp):
+            if status == 200:
+                await aprint(f"Token number {index+1} is fully working!")
+            elif status == 403:
+                await aprint(f"Token number {index+1} is account locked in some way")
+            elif status == 429:
+                await aprint(f"Token number {index+1} check was incomplete, ratelimited")
+            elif status == 401:
+                await aprint(f"Token number {index+1} is invalid!")
+            else:
+                await aprint(f"Black magic occurred -- {status} -- {index+1}")
+
+
 
 
 

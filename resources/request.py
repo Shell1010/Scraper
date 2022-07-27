@@ -14,74 +14,58 @@ uvloop.install()
 class RequestMaker:
     def __init__(self, loop=asyncio.get_event_loop(), *args, **kwargs):
         self.loop = loop
-
+        # assuming you're going to use https, not socks.
+        # self.sema = self.sema = asyncio.BoundedSemaphore(4000)
+        # Like await but works in sync
         self._await = self.loop.run_until_complete
-
+        # self._nowait = self.loop.create_task
         self.closed = False
+        self.args, self.kwargs = args, kwargs
 
-        self._await(self.create_session(*args, **kwargs))
 
     # Creates original aiohttp session
-    async def create_session(self, *args, **kwargs):
+    async def create_session(self, args, kwargs):
         self.closed = False
         self.session = aiohttp.ClientSession(*args, **kwargs)
 
     # Main thing you wanna use for sending reqs, returns [aiohttp.ClientResponse] Object
-    def request_pool_sync(self, RequestContexts: list[aiohttp.RequestInfo]):
-        return self._await(
-            asyncio.gather(*(self.request(**ctx) for ctx in RequestContexts)))
+    async def request_pool(self, RequestContexts: list[aiohttp.RequestInfo]):
+        return await asyncio.gather(*(self.request(**ctx) for ctx in RequestContexts ))
 
-
-    # Request func that does the actual request, used in above func
     async def request(self, method: str, url: str, **kwargs):
         return await self.session.request(method, url, **kwargs)
 
     # Returns json response for every item in [aiohttp.ClientResponse]
-    def response_pool_json_sync(self, Response: list[aiohttp.ClientResponse]):
-        return self._await(
-            asyncio.gather(*(self.resp_json(resp) for resp in Response)))
+    async def response_pool_json_sync(self, Response: list[aiohttp.ClientResponse]):
+        return await asyncio.gather(*(resp.json() for resp in Response))
 
 
     # Returns text response for every item in [aiohttp.ClientResponse]
-    def response_pool_text_sync(self, Response: list[aiohttp.ClientResponse]):
-        return self._await(
-            asyncio.gather(*(self.resp_text(resp) for resp in Response)))
+    async def response_pool_text_sync(self, Response: list[aiohttp.ClientResponse]):
+        return await asyncio.gather(*(resp.text()for resp in Response))
 
-    # Returns status code response for every item in [aiohttp.ClientResponse]
-    def response_pool_status_sync(self, Response: list[aiohttp.ClientResponse]):
-        return self._await(
-            asyncio.gather(*(self.resp_status_code(resp) for resp in Response)))
-
-
-
-    # Used in the response_pool_text func, used to actually turn the client response into text
-    async def resp_text(self, Response: aiohttp.ClientResponse):
-        return await Response.text()
-
-
-    # Used in the response_pool_json func, used to actually turn the client response into json
-    async def resp_json(self, Response: aiohttp.ClientResponse):
-        return await Response.json()
-
-
-    # Used in the response_pool_status func, used to actually turn the client response into status codes
-    async def resp_status_code(self, Response: aiohttp.ClientResponse):
+    async def get_status(self, Response: aiohttp.ClientResponse):
         return Response.status
+    # Returns status code response for every item in [aiohttp.ClientResponse]
+    async def response_pool_status_sync(self, Response: list[aiohttp.ClientResponse]):
+        return await asyncio.gather(*(self.get_status(resp) for resp in Response))
+
+
+
 
 
     # Used for the with statement entry thing, basically upon doing with requestmaker: does code here, its pass because I don't really do anything important here
-    def __enter__(self, *args, **kwargs):
-        pass
+    async def __aenter__(self, *args, **kwargs):
+        # print(self.args, self.kwargs, "HERE HERE HERE")
+        await self.create_session(self.args, self.kwargs)
 
     # Upon exiting the with statement it closes session
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._await(self.session.close())
-
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.session.close()
+        self.session = None
+        self.closed = True
 
     # Code for close, basically closes everything real
-    def close(self):
-        self.closed = True
-        self._await(self.session.close())
-        self.session = None
+
 
 
