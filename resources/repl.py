@@ -149,19 +149,3 @@ class ReplIt:
 
 
 
-
-
-if __name__ == "__main__":
-    repl = ReplIt()
-    id = asyncio.run(repl.get_id("/@MatheusTeles1/Yuo-Selfbot"))
-    urls, ids = asyncio.run(repl.get_forks(id))
-    full = []
-    print(len(urls))
-    for url in urls:
-        asyncio.run(repl.get_zip(url))
-        tokens = asyncio.run(repl.search_zip())
-        full += tokens
-        print(full)
-
-    for tokens in full:
-        print(tokens)

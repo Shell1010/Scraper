@@ -10,7 +10,7 @@ uvloop.install()
 async def main():
     repl = ReplIt()
     await Design.ascii()
-    id = await repl.get_id("/@JssjjsJsjss/Best-selfbot-discord")
+    id = await repl.get_id("/@Ace1028/discord-selfbot")
     urls, ids = await repl.get_forks(id)
     await aprint(len(urls))
     full = []
@@ -25,6 +25,9 @@ async def main():
 
     for token in full:
         await aprint(token)
+    with open('./tokens.txt', 'a+') as f:
+        for token in full:
+            f.write(f"{token}\n")
 
 
 
