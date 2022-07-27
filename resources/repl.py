@@ -85,7 +85,7 @@ class ReplIt:
                     await aprint(f"{j}")
 
 
-    async def get_zip(self, repl_url: str):
+    async def get_zip(self, repl_url: str, repl_id: str):
         headers = {
             "Accept": "text/html,application/xhtml+xml",
             "sec-ch-ua": '"Chromium";v="102", "Not A;Brand";v="99"',
@@ -110,16 +110,16 @@ class ReplIt:
             async with session.get(f"https://replit.com{repl_url}.zip", headers=headers) as resp:
                 if resp.status == 200:
                     j = await resp.read()
-                    with open('./resources/data/repl.zip', 'wb') as f:
+                    with open(f'./resources/data/{repl_id}.zip', 'wb') as f:
                         f.write(j)
                 else:
                     j = await resp.text()
                     await aprint(resp.status)
 
-    async def search_zip(self):
+    async def search_zip(self, repl_id: str):
         tokens = []
         folder = "./resources/data"
-        with zipfile.ZipFile('./resources/data/repl.zip', 'r') as zip_ref:
+        with zipfile.ZipFile(f'./resources/data/{repl_id}.zip', 'r') as zip_ref:
             zip_ref.extractall(folder)
         for root, dirs, files in os.walk(folder):
             for file in files:
