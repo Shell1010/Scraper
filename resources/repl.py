@@ -1,4 +1,3 @@
-from typing_extensions import Self
 import aiohttp
 import asyncio
 from aioconsole import aprint
@@ -7,7 +6,6 @@ import zipfile
 import re
 import os
 import shutil
-
 
 class ReplIt:
     def __init__(self) -> None:
@@ -127,7 +125,7 @@ class ReplIt:
                 try:
                     file_contents = file_txt.read().strip()
 
-                    disc_tokens = re.findall(r"[\W|\w]{24}\.[\W|\w]{6}\.[\W|\w]{27}", file_contents)
+                    disc_tokens = re.findall(r"[A-z|0-9]{24}\.[A-z|0-9|\W]{6}\.[A-z|0-9|\W]{27}", file_contents)
                     if len(disc_tokens) > 0:
                         tokens += disc_tokens
                     file_txt.close()
@@ -146,6 +144,15 @@ class ReplIt:
 
 
         return tokens
+
+
+
+
+
+
+
+
+
 
 
 
