@@ -15,11 +15,6 @@ async def main():
     for url, id in zip(urls, ids):
         try:
             await repl.get_zip(url, id)
-        except:
-            continue
-
-    for id in ids:
-        try:
             tokens = await repl.search_zip(id)
             full += tokens
         except:
