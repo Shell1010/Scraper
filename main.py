@@ -1,3 +1,4 @@
+import os
 import uvloop
 from resources import Design
 import asyncio
@@ -8,20 +9,19 @@ from aioconsole import aprint
 uvloop.install()
 
 async def main():
+    os.remove("./tokens.txt")
     repl = ReplIt()
     await Design.ascii()
-    id = await repl.get_id("/@Ace1028/discord-selfbot")
+    id = await repl.get_id("/@ir0kforever/scalic-selfbot")
     urls, ids = await repl.get_forks(id)
     await aprint(len(urls))
     full = []
-
     for url, id in zip(urls, ids):
-        try:
-            await repl.get_zip(url, id)
-            tokens = await repl.search_zip(id)
-            full += tokens
-        except:
-            continue
+
+        await repl.get_zip(url, id)
+        tokens = await repl.search_zip(id)
+        full += tokens
+
 
     for token in full:
         await aprint(token)

