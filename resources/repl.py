@@ -9,6 +9,8 @@ import shutil
 import ujson
 import uvloop
 from .request import RequestMaker
+from colorama import Fore as color
+
 
 uvloop.install()
 
@@ -25,6 +27,7 @@ class ReplIt:
 
         self.GRAPHQL = "https://replit.com/graphql"
 
+    #
     async def get_id(self, repl_url: str) -> str:
         """ Gets a replit.com ID from a valid replit.com URL
 
@@ -52,7 +55,7 @@ class ReplIt:
                     return j[0]['data']['repl']['id']
                 else:
                     j = await resp.text()
-                    await aprint(f"{j}")
+                    await aprint(f"{color.RED}{j}{color.RESET}")
 
     async def get_forks(self, repl_id: str) -> tuple:
         """ Gets repl.it forks regarding a repl
@@ -69,11 +72,12 @@ class ReplIt:
                 "operationName":"ReplViewForks",
                 "variables":{
                     "replId":f"{repl_id}",
-                    "count":500
+                    "count":100
                 },
                 "query":"query ReplViewForks($replId: String!, $count: Int!, $after: String) {\n  repl(id: $replId) {\n    ... on Repl {\n      id\n      publicForkCount\n      publicReleasesForkCount\n      publicForks(count: $count, after: $after) {\n        items {\n          id\n          ...ReplPostReplCardRepl\n          __typename\n        }\n        pageInfo {\n          nextCursor\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment ReplPostReplCardRepl on Repl {\n  id\n  iconUrl\n  description(plainText: true)\n  ...ReplPostReplInfoRepl\n  ...ReplStatsRepl\n  ...ReplLinkRepl\n  tags {\n    id\n    ...PostsFeedNavTag\n    __typename\n  }\n  owner {\n    ... on Team {\n      id\n      username\n      url\n      image\n      __typename\n    }\n    ... on User {\n      id\n      username\n      url\n      image\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nfragment ReplPostReplInfoRepl on Repl {\n  id\n  title\n  description(plainText: true)\n  imageUrl\n  iconUrl\n  templateInfo {\n    label\n    iconUrl\n    __typename\n  }\n  __typename\n}\n\nfragment ReplStatsRepl on Repl {\n  id\n  likeCount\n  runCount\n  commentCount\n  __typename\n}\n\nfragment ReplLinkRepl on Repl {\n  id\n  url\n  nextPagePathname\n  __typename\n}\n\nfragment PostsFeedNavTag on Tag {\n  id\n  isOfficial\n  __typename\n}\n"
             }
         ]
+
         async with aiohttp.ClientSession() as session:
             async with session.post(self.GRAPHQL, headers=self.GRAPHQL_HEADERS, json=json) as resp:
                 if resp.status == 200:
@@ -81,11 +85,45 @@ class ReplIt:
                     forks = j[0]['data']['repl']['publicForks']['items']
                     urls = [fork['url'] for fork in forks]
                     ids = [fork['id'] for fork in forks]
+                    count = j[0]['data']['repl']['publicForkCount']
+
+                    if len(urls) !=  int(count):
+                        while True:
+                            json2 = [
+                                {
+                                "operationName":"ReplViewForks",
+                                    "variables":{
+                                        "replId":f"{repl_id}",
+                                        "count":100,
+                                        "after":f"{ids[-1]}"
+                                    },
+                                "query":"query ReplViewForks($replId: String!, $count: Int!, $after: String) {\n  repl(id: $replId) {\n    ... on Repl {\n      id\n      publicForkCount\n      publicReleasesForkCount\n      publicForks(count: $count, after: $after) {\n        items {\n          id\n          ...ReplPostReplCardRepl\n          __typename\n        }\n        pageInfo {\n          nextCursor\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment ReplPostReplCardRepl on Repl {\n  id\n  iconUrl\n  description(plainText: true)\n  ...ReplPostReplInfoRepl\n  ...ReplStatsRepl\n  ...ReplLinkRepl\n  tags {\n    id\n    ...PostsFeedNavTag\n    __typename\n  }\n  owner {\n    ... on Team {\n      id\n      username\n      url\n      image\n      __typename\n    }\n    ... on User {\n      id\n      username\n      url\n      image\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nfragment ReplPostReplInfoRepl on Repl {\n  id\n  title\n  description(plainText: true)\n  imageUrl\n  iconUrl\n  templateInfo {\n    label\n    iconUrl\n    __typename\n  }\n  __typename\n}\n\nfragment ReplStatsRepl on Repl {\n  id\n  likeCount\n  runCount\n  commentCount\n  __typename\n}\n\nfragment ReplLinkRepl on Repl {\n  id\n  url\n  nextPagePathname\n  __typename\n}\n\nfragment PostsFeedNavTag on Tag {\n  id\n  isOfficial\n  __typename\n}\n"
+                                }
+                            ]
+                            async with session.post(self.GRAPHQL, headers=self.GRAPHQL_HEADERS, json=json2) as resp:
+                                if resp.status == 200:
+                                    j = await resp.json()
+                                    forks = j[0]['data']['repl']['publicForks']['items']
+                                    urls += [fork['url'] for fork in forks]
+                                    ids += [fork['id'] for fork in forks]
+                                    await asyncio.sleep(1.0)
+                                    if len(urls) >= int(count):
+                                        break
+                                    else:
+                                        continue
+                                else:
+                                    j = await resp.text()
+                                    await aprint(f"{color.RED}{j}{color.RESET}")
+
                     return urls, ids
+
+
+
+
 
                 else:
                     j = await resp.text()
-                    await aprint(f"{j}")
+                    await aprint(f"{color.RED}{j}{color.RESET}")
 
 
     async def get_zip(self, repl_url: str, repl_id: str):
@@ -117,7 +155,7 @@ class ReplIt:
                         f.write(j)
                 else:
                     j = await resp.text()
-                    await aprint(resp.status)
+                    await aprint(f"{color.RED}{resp.status}{color.RESET}")
 
     async def search_zip(self, repl_id: str):
         tokens = []
@@ -145,7 +183,7 @@ class ReplIt:
                 elif os.path.isdir(file_path):
                     shutil.rmtree(file_path)
             except Exception as e:
-                await aprint('Failed to delete %s. Reason: %s' % (file_path, e))
+                await aprint(f'{color.RED}Failed to delete %s. Reason: %s{color.RESET}' % (file_path, e))
         return tokens
 
     async def check(self):
@@ -157,15 +195,15 @@ class ReplIt:
         resp = await rm.response_pool_status_sync(resp)
         for index, status in enumerate(resp):
             if status == 200:
-                await aprint(f"Token number {index+1} is fully working!")
+                await aprint(f"{color.GREEN}Token number {index+1} is fully working!{color.RESET}")
             elif status == 403:
-                await aprint(f"Token number {index+1} is account locked in some way")
+                await aprint(f"{color.RED}Token number {index+1} is account locked in some way{color.RESET}")
             elif status == 429:
-                await aprint(f"Token number {index+1} check was incomplete, ratelimited")
+                await aprint(f"{color.RED}Token number {index+1} check was incomplete, ratelimited{color.RESET}")
             elif status == 401:
-                await aprint(f"Token number {index+1} is invalid!")
+                await aprint(f"{color.RED}Token number {index+1} is invalid!{color.RESET}")
             else:
-                await aprint(f"Black magic occurred -- {status} -- {index+1}")
+                await aprint(f"{color.RED}Black magic occurred -- {status} -- {index+1}{color.RESET}")
 
 
 

@@ -1,12 +1,10 @@
 import aiohttp
 import asyncio
-import time
 import uvloop
-import inspect
-import nest_asyncio
 
 
-# nest_asyncio.apply()
+
+
 uvloop.install()
 
 
@@ -14,11 +12,8 @@ uvloop.install()
 class RequestMaker:
     def __init__(self, loop=asyncio.get_event_loop(), *args, **kwargs):
         self.loop = loop
-        # assuming you're going to use https, not socks.
-        # self.sema = self.sema = asyncio.BoundedSemaphore(4000)
-        # Like await but works in sync
+
         self._await = self.loop.run_until_complete
-        # self._nowait = self.loop.create_task
         self.closed = False
         self.args, self.kwargs = args, kwargs
 
@@ -32,6 +27,8 @@ class RequestMaker:
     async def request_pool(self, RequestContexts: list[aiohttp.RequestInfo]):
         return await asyncio.gather(*(self.request(**ctx) for ctx in RequestContexts ))
 
+
+    # Helper method so session.request is async - isn't originally
     async def request(self, method: str, url: str, **kwargs):
         return await self.session.request(method, url, **kwargs)
 
@@ -44,8 +41,10 @@ class RequestMaker:
     async def response_pool_text_sync(self, Response: list[aiohttp.ClientResponse]):
         return await asyncio.gather(*(resp.text()for resp in Response))
 
+    # Helper method so resp.status is async - isn't originally
     async def get_status(self, Response: aiohttp.ClientResponse):
         return Response.status
+
     # Returns status code response for every item in [aiohttp.ClientResponse]
     async def response_pool_status_sync(self, Response: list[aiohttp.ClientResponse]):
         return await asyncio.gather(*(self.get_status(resp) for resp in Response))
@@ -54,12 +53,12 @@ class RequestMaker:
 
 
 
-    # Used for the with statement entry thing, basically upon doing with requestmaker: does code here, its pass because I don't really do anything important here
+    # Used for the async with context manager, required for creating the original session and passing args to aiohttp.ClientSession
     async def __aenter__(self, *args, **kwargs):
         # print(self.args, self.kwargs, "HERE HERE HERE")
         await self.create_session(self.args, self.kwargs)
 
-    # Upon exiting the with statement it closes session
+    # User upon exiting the context manager, required for closing all aiohttp sessions
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.session.close()
         self.session = None
