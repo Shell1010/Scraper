@@ -6,6 +6,9 @@ import zipfile
 import re
 import os
 import shutil
+import uvloop
+
+uvloop.install()
 
 class ReplIt:
     def __init__(self) -> None:
