@@ -104,8 +104,11 @@ class ReplIt:
                                 if resp.status == 200:
                                     j = await resp.json()
                                     forks = j[0]['data']['repl']['publicForks']['items']
-                                    urls += [fork['url'] for fork in forks]
-                                    ids += [fork['id'] for fork in forks]
+                                    if len([fork['url'] for fork in forks]) > 0:
+                                        urls += [fork['url'] for fork in forks]
+                                        ids += [fork['id'] for fork in forks]
+                                    else:
+                                        break
                                     await asyncio.sleep(1.0)
                                     if len(urls) >= int(count):
                                         break

