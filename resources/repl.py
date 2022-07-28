@@ -189,24 +189,167 @@ class ReplIt:
                 await aprint(f'{color.RED}Failed to delete %s. Reason: %s{color.RESET}' % (file_path, e))
         return tokens
 
+    async def repl_scrape(self):
+        async with aiohttp.ClientSession() as session:
+            new_json = [
+                {
+                    "operationName":"ReplPostsFeed",
+                    "variables":{
+                        "options":{
+                            "tags":["discord"],
+                            "order":"New"
+                        }
+                    },
+                    "query":"query ReplPostsFeed($options: ReplPostsQueryOptions) {\n  currentUser {\n    id\n    ...ReplPostCurrentUser\n    __typename\n  }\n  replPosts(options: $options) {\n    pageInfo {\n      nextCursor\n      __typename\n    }\n    items {\n      id\n      ...ReplPostPost\n      ...ReplCardPostPost\n      ...OldPostPost\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment ReplPostCurrentUser on CurrentUser {\n  id\n  ...LikeButtonCurrentUser\n  __typename\n}\n\nfragment LikeButtonCurrentUser on CurrentUser {\n  id\n  isVerified\n  __typename\n}\n\nfragment ReplPostPost on Post {\n  id\n  title\n  timeCreated\n  isPinned\n  isAnnouncement\n  replComment {\n    id\n    body(removeMarkdown: true)\n    __typename\n  }\n  repl {\n    id\n    ...ReplPostRepl\n    __typename\n  }\n  user {\n    id\n    ...ReplPostUserPostUser\n    __typename\n  }\n  recentReplComments {\n    id\n    ...ReplPostReplComment\n    __typename\n  }\n  __typename\n}\n\nfragment ReplPostRepl on Repl {\n  id\n  ...ReplPostReplInfoRepl\n  ...LikeButtonRepl\n  ...ReplStatsRepl\n  tags {\n    id\n    ...PostsFeedNavTag\n    __typename\n  }\n  __typename\n}\n\nfragment ReplPostReplInfoRepl on Repl {\n  id\n  title\n  description(plainText: true)\n  imageUrl\n  iconUrl\n  templateInfo {\n    label\n    iconUrl\n    __typename\n  }\n  __typename\n}\n\nfragment LikeButtonRepl on Repl {\n  id\n  currentUserDidLike\n  likeCount\n  url\n  wasPosted\n  wasPublished\n  __typename\n}\n\nfragment ReplStatsRepl on Repl {\n  id\n  likeCount\n  runCount\n  commentCount\n  __typename\n}\n\nfragment PostsFeedNavTag on Tag {\n  id\n  isOfficial\n  __typename\n}\n\nfragment ReplPostUserPostUser on User {\n  id\n  username\n  image\n  ...UserLinkUser\n  __typename\n}\n\nfragment UserLinkUser on User {\n  id\n  url\n  username\n  __typename\n}\n\nfragment ReplPostReplComment on ReplComment {\n  id\n  body\n  timeCreated\n  user {\n    id\n    ...ReplPostRecentCommentUser\n    __typename\n  }\n  __typename\n}\n\nfragment ReplPostRecentCommentUser on User {\n  id\n  username\n  image\n  ...UserLinkUser\n  __typename\n}\n\nfragment ReplCardPostPost on Post {\n  id\n  title\n  timeCreated\n  isPinned\n  isAnnouncement\n  repl {\n    id\n    ...ReplCardPostRepl\n    __typename\n  }\n  recentReplComments {\n    id\n    ...ReplPostReplComment\n    __typename\n  }\n  user {\n    id\n    ...ReplPostUserPostUser\n    __typename\n  }\n  __typename\n}\n\nfragment ReplCardPostRepl on Repl {\n  id\n  ...LikeButtonRepl\n  ...ReplPostReplCardRepl\n  recentComments {\n    id\n    ...ReplPostReplComment\n    __typename\n  }\n  __typename\n}\n\nfragment ReplPostReplCardRepl on Repl {\n  id\n  iconUrl\n  description(plainText: true)\n  ...ReplPostReplInfoRepl\n  ...ReplStatsRepl\n  ...ReplLinkRepl\n  tags {\n    id\n    ...PostsFeedNavTag\n    __typename\n  }\n  owner {\n    ... on Team {\n      id\n      username\n      url\n      image\n      __typename\n    }\n    ... on User {\n      id\n      username\n      url\n      image\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nfragment ReplLinkRepl on Repl {\n  id\n  url\n  nextPagePathname\n  __typename\n}\n\nfragment OldPostPost on Post {\n  id\n  title\n  preview(removeMarkdown: true, length: 150)\n  url\n  commentCount\n  isPinned\n  isAnnouncement\n  timeCreated\n  ...PostVoteControlPost\n  ...PostLinkPost\n  user {\n    id\n    ...ReplPostUserPostUser\n    __typename\n  }\n  repl {\n    id\n    ...ReplPostRepl\n    __typename\n  }\n  board {\n    id\n    name\n    color\n    __typename\n  }\n  recentComments(count: 3) {\n    id\n    preview(removeMarkdown: true, length: 500)\n    timeCreated\n    user {\n      id\n      ...ReplPostRecentCommentUser\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nfragment PostVoteControlPost on Post {\n  id\n  voteCount\n  canVote\n  hasVoted\n  __typename\n}\n\nfragment PostLinkPost on Post {\n  id\n  url\n  __typename\n}\n"
+                }
+            ]
+            hot_json = [
+                {
+                    "operationName":"ReplPostsFeed",
+                    "variables":{
+                        "options":{
+                            "tags":["discord"],
+                            "order":"Hot"
+                        }
+                    },
+                    "query":"query ReplPostsFeed($options: ReplPostsQueryOptions) {\n  currentUser {\n    id\n    ...ReplPostCurrentUser\n    __typename\n  }\n  replPosts(options: $options) {\n    pageInfo {\n      nextCursor\n      __typename\n    }\n    items {\n      id\n      ...ReplPostPost\n      ...ReplCardPostPost\n      ...OldPostPost\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment ReplPostCurrentUser on CurrentUser {\n  id\n  ...LikeButtonCurrentUser\n  __typename\n}\n\nfragment LikeButtonCurrentUser on CurrentUser {\n  id\n  isVerified\n  __typename\n}\n\nfragment ReplPostPost on Post {\n  id\n  title\n  timeCreated\n  isPinned\n  isAnnouncement\n  replComment {\n    id\n    body(removeMarkdown: true)\n    __typename\n  }\n  repl {\n    id\n    ...ReplPostRepl\n    __typename\n  }\n  user {\n    id\n    ...ReplPostUserPostUser\n    __typename\n  }\n  recentReplComments {\n    id\n    ...ReplPostReplComment\n    __typename\n  }\n  __typename\n}\n\nfragment ReplPostRepl on Repl {\n  id\n  ...ReplPostReplInfoRepl\n  ...LikeButtonRepl\n  ...ReplStatsRepl\n  tags {\n    id\n    ...PostsFeedNavTag\n    __typename\n  }\n  __typename\n}\n\nfragment ReplPostReplInfoRepl on Repl {\n  id\n  title\n  description(plainText: true)\n  imageUrl\n  iconUrl\n  templateInfo {\n    label\n    iconUrl\n    __typename\n  }\n  __typename\n}\n\nfragment LikeButtonRepl on Repl {\n  id\n  currentUserDidLike\n  likeCount\n  url\n  wasPosted\n  wasPublished\n  __typename\n}\n\nfragment ReplStatsRepl on Repl {\n  id\n  likeCount\n  runCount\n  commentCount\n  __typename\n}\n\nfragment PostsFeedNavTag on Tag {\n  id\n  isOfficial\n  __typename\n}\n\nfragment ReplPostUserPostUser on User {\n  id\n  username\n  image\n  ...UserLinkUser\n  __typename\n}\n\nfragment UserLinkUser on User {\n  id\n  url\n  username\n  __typename\n}\n\nfragment ReplPostReplComment on ReplComment {\n  id\n  body\n  timeCreated\n  user {\n    id\n    ...ReplPostRecentCommentUser\n    __typename\n  }\n  __typename\n}\n\nfragment ReplPostRecentCommentUser on User {\n  id\n  username\n  image\n  ...UserLinkUser\n  __typename\n}\n\nfragment ReplCardPostPost on Post {\n  id\n  title\n  timeCreated\n  isPinned\n  isAnnouncement\n  repl {\n    id\n    ...ReplCardPostRepl\n    __typename\n  }\n  recentReplComments {\n    id\n    ...ReplPostReplComment\n    __typename\n  }\n  user {\n    id\n    ...ReplPostUserPostUser\n    __typename\n  }\n  __typename\n}\n\nfragment ReplCardPostRepl on Repl {\n  id\n  ...LikeButtonRepl\n  ...ReplPostReplCardRepl\n  recentComments {\n    id\n    ...ReplPostReplComment\n    __typename\n  }\n  __typename\n}\n\nfragment ReplPostReplCardRepl on Repl {\n  id\n  iconUrl\n  description(plainText: true)\n  ...ReplPostReplInfoRepl\n  ...ReplStatsRepl\n  ...ReplLinkRepl\n  tags {\n    id\n    ...PostsFeedNavTag\n    __typename\n  }\n  owner {\n    ... on Team {\n      id\n      username\n      url\n      image\n      __typename\n    }\n    ... on User {\n      id\n      username\n      url\n      image\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nfragment ReplLinkRepl on Repl {\n  id\n  url\n  nextPagePathname\n  __typename\n}\n\nfragment OldPostPost on Post {\n  id\n  title\n  preview(removeMarkdown: true, length: 150)\n  url\n  commentCount\n  isPinned\n  isAnnouncement\n  timeCreated\n  ...PostVoteControlPost\n  ...PostLinkPost\n  user {\n    id\n    ...ReplPostUserPostUser\n    __typename\n  }\n  repl {\n    id\n    ...ReplPostRepl\n    __typename\n  }\n  board {\n    id\n    name\n    color\n    __typename\n  }\n  recentComments(count: 3) {\n    id\n    preview(removeMarkdown: true, length: 500)\n    timeCreated\n    user {\n      id\n      ...ReplPostRecentCommentUser\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nfragment PostVoteControlPost on Post {\n  id\n  voteCount\n  canVote\n  hasVoted\n  __typename\n}\n\nfragment PostLinkPost on Post {\n  id\n  url\n  __typename\n}\n"
+                }
+            ]
+            top_json = [
+                {
+                    "operationName":"ReplPostsFeed",
+                    "variables":{
+                        "options":{
+                            "tags":["discord"],
+                            "order":"Top"
+                        }
+                    },
+                    "query":"query ReplPostsFeed($options: ReplPostsQueryOptions) {\n  currentUser {\n    id\n    ...ReplPostCurrentUser\n    __typename\n  }\n  replPosts(options: $options) {\n    pageInfo {\n      nextCursor\n      __typename\n    }\n    items {\n      id\n      ...ReplPostPost\n      ...ReplCardPostPost\n      ...OldPostPost\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment ReplPostCurrentUser on CurrentUser {\n  id\n  ...LikeButtonCurrentUser\n  __typename\n}\n\nfragment LikeButtonCurrentUser on CurrentUser {\n  id\n  isVerified\n  __typename\n}\n\nfragment ReplPostPost on Post {\n  id\n  title\n  timeCreated\n  isPinned\n  isAnnouncement\n  replComment {\n    id\n    body(removeMarkdown: true)\n    __typename\n  }\n  repl {\n    id\n    ...ReplPostRepl\n    __typename\n  }\n  user {\n    id\n    ...ReplPostUserPostUser\n    __typename\n  }\n  recentReplComments {\n    id\n    ...ReplPostReplComment\n    __typename\n  }\n  __typename\n}\n\nfragment ReplPostRepl on Repl {\n  id\n  ...ReplPostReplInfoRepl\n  ...LikeButtonRepl\n  ...ReplStatsRepl\n  tags {\n    id\n    ...PostsFeedNavTag\n    __typename\n  }\n  __typename\n}\n\nfragment ReplPostReplInfoRepl on Repl {\n  id\n  title\n  description(plainText: true)\n  imageUrl\n  iconUrl\n  templateInfo {\n    label\n    iconUrl\n    __typename\n  }\n  __typename\n}\n\nfragment LikeButtonRepl on Repl {\n  id\n  currentUserDidLike\n  likeCount\n  url\n  wasPosted\n  wasPublished\n  __typename\n}\n\nfragment ReplStatsRepl on Repl {\n  id\n  likeCount\n  runCount\n  commentCount\n  __typename\n}\n\nfragment PostsFeedNavTag on Tag {\n  id\n  isOfficial\n  __typename\n}\n\nfragment ReplPostUserPostUser on User {\n  id\n  username\n  image\n  ...UserLinkUser\n  __typename\n}\n\nfragment UserLinkUser on User {\n  id\n  url\n  username\n  __typename\n}\n\nfragment ReplPostReplComment on ReplComment {\n  id\n  body\n  timeCreated\n  user {\n    id\n    ...ReplPostRecentCommentUser\n    __typename\n  }\n  __typename\n}\n\nfragment ReplPostRecentCommentUser on User {\n  id\n  username\n  image\n  ...UserLinkUser\n  __typename\n}\n\nfragment ReplCardPostPost on Post {\n  id\n  title\n  timeCreated\n  isPinned\n  isAnnouncement\n  repl {\n    id\n    ...ReplCardPostRepl\n    __typename\n  }\n  recentReplComments {\n    id\n    ...ReplPostReplComment\n    __typename\n  }\n  user {\n    id\n    ...ReplPostUserPostUser\n    __typename\n  }\n  __typename\n}\n\nfragment ReplCardPostRepl on Repl {\n  id\n  ...LikeButtonRepl\n  ...ReplPostReplCardRepl\n  recentComments {\n    id\n    ...ReplPostReplComment\n    __typename\n  }\n  __typename\n}\n\nfragment ReplPostReplCardRepl on Repl {\n  id\n  iconUrl\n  description(plainText: true)\n  ...ReplPostReplInfoRepl\n  ...ReplStatsRepl\n  ...ReplLinkRepl\n  tags {\n    id\n    ...PostsFeedNavTag\n    __typename\n  }\n  owner {\n    ... on Team {\n      id\n      username\n      url\n      image\n      __typename\n    }\n    ... on User {\n      id\n      username\n      url\n      image\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nfragment ReplLinkRepl on Repl {\n  id\n  url\n  nextPagePathname\n  __typename\n}\n\nfragment OldPostPost on Post {\n  id\n  title\n  preview(removeMarkdown: true, length: 150)\n  url\n  commentCount\n  isPinned\n  isAnnouncement\n  timeCreated\n  ...PostVoteControlPost\n  ...PostLinkPost\n  user {\n    id\n    ...ReplPostUserPostUser\n    __typename\n  }\n  repl {\n    id\n    ...ReplPostRepl\n    __typename\n  }\n  board {\n    id\n    name\n    color\n    __typename\n  }\n  recentComments(count: 3) {\n    id\n    preview(removeMarkdown: true, length: 500)\n    timeCreated\n    user {\n      id\n      ...ReplPostRecentCommentUser\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nfragment PostVoteControlPost on Post {\n  id\n  voteCount\n  canVote\n  hasVoted\n  __typename\n}\n\nfragment PostLinkPost on Post {\n  id\n  url\n  __typename\n}\n"
+                }
+            ]
+            async with session.post(self.GRAPHQL, headers=self.GRAPHQL_HEADERS, json=new_json) as resp:
+                if resp.status == 200:
+                    j = await resp.json()
+                    repls = j[0]['data']['replPosts']['items']
+
+                    ids = [repl['repl']['id'] for repl in repls]
+                    urls = [repl['repl']['url'] for repl in repls]
+                    async with session.post(self.GRAPHQL, headers=self.GRAPHQL_HEADERS, json=hot_json) as resp:
+                        if resp.status == 200:
+                            j = await resp.json()
+                            repls = j[0]['data']['replPosts']['items']
+                            ids += [repl['repl']['id'] for repl in repls]
+                            urls += [repl['repl']['url'] for repl in repls]
+                            async with session.post(self.GRAPHQL, headers=self.GRAPHQL_HEADERS, json=top_json) as resp:
+                                if resp.status == 200:
+                                    j = await resp.json()
+                                    repls = j[0]['data']['replPosts']['items']
+                                    ids += [repl['repl']['id'] for repl in repls]
+                                    urls += [repl['repl']['url'] for repl in repls]
+
+                                else:
+                                    await aprint(f"{color.RED}{resp.status}{color.RESET}")
+                        else:
+                            await aprint(f"{color.RED}{resp.status}{color.RESET}")
+
+                else:
+                    await aprint(f"{color.RED}{resp.status}{color.RESET}")
+        return urls, ids
+
+
+
+
+
     async def check(self):
         tokens = open('tokens.txt', 'r').read().splitlines()
+
         rm = RequestMaker(headers={'content-type':'application/json', 'user-agent':'Mozilla/5.0 (X11; Linux x86_64; rv:94.0) Gecko/20100101 Firefox/94.0'}, connector=aiohttp.TCPConnector(ssl=False, keepalive_timeout=10000, limit=0, limit_per_host=0), trust_env=False, skip_auto_headers=None, json_serialize=ujson.dumps, auto_decompress=True)
-        async with rm:
-            resp = await rm.request_pool([{"method":"get", "url":"https://discord.com/api/v9/users/@me/library", "headers":{"authorization":f"{token}"}}for token in tokens])
-        # print(results)
-        resp = await rm.response_pool_status_sync(resp)
-        for index, status in enumerate(resp):
-            if status == 200:
-                await aprint(f"{color.GREEN}Token number {index+1} is fully working!{color.RESET}")
-            elif status == 403:
-                await aprint(f"{color.RED}Token number {index+1} is account locked in some way{color.RESET}")
-            elif status == 429:
-                await aprint(f"{color.RED}Token number {index+1} check was incomplete, ratelimited{color.RESET}")
-            elif status == 401:
-                await aprint(f"{color.RED}Token number {index+1} is invalid!{color.RESET}")
-            else:
-                await aprint(f"{color.RED}Black magic occurred -- {status} -- {index+1}{color.RESET}")
+        if len(tokens) > 2000:
+            for i in range(0, len(tokens), 500):
+                async with rm:
+                    resp = await rm.request_pool([{"method":"get", "url":"https://discord.com/api/v9/users/@me/library", "headers":{"authorization":f"{token}"}}for token in tokens[i:i+500]])
+                resp = await rm.response_pool_status_sync(resp)
+                for index, status in enumerate(resp):
+                    with open('valid.txt', 'w') as f:
+                        if status == 200:
+                            await aprint(f"{color.GREEN}Token number {index+1} is fully working user token! --- {tokens[index]}{color.RESET}")
+                            f.write(f"{tokens[index]}\n")
+                        elif status == 403:
+                            await aprint(f"{color.RED}Token number {index+1} is account locked in some way{color.RESET}")
+                        elif status == 429:
+                            await aprint(f"{color.RED}Token number {index+1} check was incomplete, ratelimited{color.RESET}")
+                        elif status == 401:
+                            await aprint(f"{color.RED}Token number {index+1} is invalid!{color.RESET}")
+                        else:
+                            await aprint(f"{color.RED}Black magic occurred -- {status} -- {index+1}{color.RESET}")
+            await asyncio.sleep(2)
+
+        else:
+            async with rm:
+                resp = await rm.request_pool([{"method":"get", "url":"https://discord.com/api/v9/users/@me/library", "headers":{"authorization":f"{token}"}}for token in tokens])
+
+            # print(results)
+            resp = await rm.response_pool_status_sync(resp)
+            for index, status in enumerate(resp):
+                with open('valid.txt', 'w') as f:
+                    if status == 200:
+                        await aprint(f"{color.GREEN}Token number {index+1} is fully working user token! --- {tokens[index]}{color.RESET}")
+                        f.write(f"{tokens[index]}\n")
+                    elif status == 403:
+                        await aprint(f"{color.RED}Token number {index+1} is account locked in some way{color.RESET}")
+                    elif status == 429:
+                        await aprint(f"{color.RED}Token number {index+1} check was incomplete, ratelimited{color.RESET}")
+                    elif status == 401:
+                        await aprint(f"{color.RED}Token number {index+1} is invalid!{color.RESET}")
+                    else:
+                        await aprint(f"{color.RED}Black magic occurred -- {status} -- {index+1}{color.RESET}")
+            await asyncio.sleep(2)
+
+    async def bot_check(self):
+        tokens = open('tokens.txt', 'r').read().splitlines()
+
+        rm = RequestMaker(headers={'content-type':'application/json', 'user-agent':'Mozilla/5.0 (X11; Linux x86_64; rv:94.0) Gecko/20100101 Firefox/94.0'}, connector=aiohttp.TCPConnector(ssl=False, keepalive_timeout=10000, limit=0, limit_per_host=0), trust_env=False, skip_auto_headers=None, json_serialize=ujson.dumps, auto_decompress=True)
+        if len(tokens) > 2000:
+            for i in range(0, len(tokens), 500):
+                async with rm:
+                    resp = await rm.request_pool([{"method":"get", "url":'https://canary.discordapp.com/api/v9/users/@me', "headers":{"authorization": f'Bot {token}'}}for token in tokens[i:i+500]])
+                resp = await rm.response_pool_status_sync(resp)
+                for index, status in enumerate(resp):
+                    with open('valid.txt', 'w') as f:
+                        if status == 200:
+                            await aprint(f"{color.GREEN}Token number {index+1} is fully working bot token! --- {tokens[index]}{color.RESET}")
+                            f.write(f"{tokens[index]}\n")
+                        elif status == 403:
+                            await aprint(f"{color.RED}Token number {index+1} is account locked in some way{color.RESET}")
+                        elif status == 429:
+                            await aprint(f"{color.RED}Token number {index+1} check was incomplete, ratelimited{color.RESET}")
+                        elif status == 401:
+                            await aprint(f"{color.RED}Token number {index+1} is invalid!{color.RESET}")
+                        else:
+                            await aprint(f"{color.RED}Black magic occurred -- {status} -- {index+1}{color.RESET}")
+            await asyncio.sleep(2)
+        else:
+            async with rm:
+                resp = await rm.request_pool([{"method":"get", "url":'https://canary.discordapp.com/api/v9/users/@me', "headers":{"Authorization": f'Bot {token}'}}for token in tokens])
+
+            # print(results)
+            resp = await rm.response_pool_status_sync(resp)
+            for index, status in enumerate(resp):
+                with open('valid.txt', 'a+') as f:
+                    if status == 200:
+                        await aprint(f"{color.GREEN}Token number {index+1} is fully working bot token! --- {tokens[index]}{color.RESET}")
+                        f.write(f"{tokens[index]}\n")
+                    elif status == 403:
+                        await aprint(f"{color.RED}Token number {index+1} is account locked in some way{color.RESET}")
+                    elif status == 429:
+                        await aprint(f"{color.RED}Token number {index+1} check was incomplete, ratelimited{color.RESET}")
+                    elif status == 401:
+                        await aprint(f"{color.RED}Token number {index+1} is invalid!{color.RESET}")
+                    else:
+                        await aprint(f"{color.RED}Black magic occurred -- {status} -- {index+1}{color.RESET}")
+
+            await asyncio.sleep(2)
+
 
 
 

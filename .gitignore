@@ -1,3 +1,5 @@
-./resources/data/*
+/resources/data/*
 tokens.txt
 false_tokens.txt
+/resources/__pycache__/*
+valid.txt
