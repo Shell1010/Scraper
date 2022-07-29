@@ -109,7 +109,6 @@ class ReplIt:
                                         ids += [fork['id'] for fork in forks]
                                     else:
                                         break
-                                    await asyncio.sleep(1.0)
                                     if len(urls) >= int(count):
                                         break
                                     else:
@@ -265,24 +264,24 @@ class ReplIt:
 
         rm = RequestMaker(headers={'content-type':'application/json', 'user-agent':'Mozilla/5.0 (X11; Linux x86_64; rv:94.0) Gecko/20100101 Firefox/94.0'}, connector=aiohttp.TCPConnector(ssl=False, keepalive_timeout=10000, limit=0, limit_per_host=0), trust_env=False, skip_auto_headers=None, json_serialize=ujson.dumps, auto_decompress=True)
         if len(tokens) > 2000:
-            for i in range(0, len(tokens), 500):
-                async with rm:
+            async with rm:
+                for i in range(0, len(tokens), 100):
                     resp = await rm.request_pool([{"method":"get", "url":"https://discord.com/api/v9/users/@me/library", "headers":{"authorization":f"{token}"}}for token in tokens[i:i+500]])
-                resp = await rm.response_pool_status_sync(resp)
-                for index, status in enumerate(resp):
-                    with open('valid.txt', 'w') as f:
-                        if status == 200:
-                            await aprint(f"{color.GREEN}Token number {index+1} is fully working user token! --- {tokens[index]}{color.RESET}")
-                            f.write(f"{tokens[index]}\n")
-                        elif status == 403:
-                            await aprint(f"{color.RED}Token number {index+1} is account locked in some way{color.RESET}")
-                        elif status == 429:
-                            await aprint(f"{color.RED}Token number {index+1} check was incomplete, ratelimited{color.RESET}")
-                        elif status == 401:
-                            await aprint(f"{color.RED}Token number {index+1} is invalid!{color.RESET}")
-                        else:
-                            await aprint(f"{color.RED}Black magic occurred -- {status} -- {index+1}{color.RESET}")
-            await asyncio.sleep(2)
+                    resp = await rm.response_pool_status_sync(resp)
+                    for index, status in enumerate(resp):
+                        with open('valid.txt', 'a') as f:
+                            if status == 200:
+                                await aprint(f"{color.GREEN}Token number {index+1} is fully working user token! --- {tokens[index]}{color.RESET}")
+                                f.write(f"{tokens[index]}\n")
+                            elif status == 403:
+                                await aprint(f"{color.RED}Token number {index+1} is account locked in some way{color.RESET}")
+                            elif status == 429:
+                                await aprint(f"{color.RED}Token number {index+1} check was incomplete, ratelimited{color.RESET}")
+                            elif status == 401:
+                                await aprint(f"{color.RED}Token number {index+1} is invalid!{color.RESET}")
+                            else:
+                                await aprint(f"{color.RED}Black magic occurred -- {status} -- {index+1}{color.RESET}")
+
 
         else:
             async with rm:
@@ -291,7 +290,7 @@ class ReplIt:
             # print(results)
             resp = await rm.response_pool_status_sync(resp)
             for index, status in enumerate(resp):
-                with open('valid.txt', 'w') as f:
+                with open('valid.txt', 'a') as f:
                     if status == 200:
                         await aprint(f"{color.GREEN}Token number {index+1} is fully working user token! --- {tokens[index]}{color.RESET}")
                         f.write(f"{tokens[index]}\n")
@@ -303,31 +302,30 @@ class ReplIt:
                         await aprint(f"{color.RED}Token number {index+1} is invalid!{color.RESET}")
                     else:
                         await aprint(f"{color.RED}Black magic occurred -- {status} -- {index+1}{color.RESET}")
-            await asyncio.sleep(2)
 
     async def bot_check(self):
         tokens = open('tokens.txt', 'r').read().splitlines()
 
         rm = RequestMaker(headers={'content-type':'application/json', 'user-agent':'Mozilla/5.0 (X11; Linux x86_64; rv:94.0) Gecko/20100101 Firefox/94.0'}, connector=aiohttp.TCPConnector(ssl=False, keepalive_timeout=10000, limit=0, limit_per_host=0), trust_env=False, skip_auto_headers=None, json_serialize=ujson.dumps, auto_decompress=True)
         if len(tokens) > 2000:
-            for i in range(0, len(tokens), 500):
-                async with rm:
+            async with rm:
+                for i in range(0, len(tokens), 500):
                     resp = await rm.request_pool([{"method":"get", "url":'https://canary.discordapp.com/api/v9/users/@me', "headers":{"authorization": f'Bot {token}'}}for token in tokens[i:i+500]])
-                resp = await rm.response_pool_status_sync(resp)
-                for index, status in enumerate(resp):
-                    with open('valid.txt', 'w') as f:
-                        if status == 200:
-                            await aprint(f"{color.GREEN}Token number {index+1} is fully working bot token! --- {tokens[index]}{color.RESET}")
-                            f.write(f"{tokens[index]}\n")
-                        elif status == 403:
-                            await aprint(f"{color.RED}Token number {index+1} is account locked in some way{color.RESET}")
-                        elif status == 429:
-                            await aprint(f"{color.RED}Token number {index+1} check was incomplete, ratelimited{color.RESET}")
-                        elif status == 401:
-                            await aprint(f"{color.RED}Token number {index+1} is invalid!{color.RESET}")
-                        else:
-                            await aprint(f"{color.RED}Black magic occurred -- {status} -- {index+1}{color.RESET}")
-            await asyncio.sleep(2)
+                    resp = await rm.response_pool_status_sync(resp)
+                    for index, status in enumerate(resp):
+                        with open('valid.txt', 'a') as f:
+                            if status == 200:
+                                await aprint(f"{color.GREEN}Token number {index+1} is fully working bot token! --- {tokens[index]}{color.RESET}")
+                                f.write(f"{tokens[index]}\n")
+                            elif status == 403:
+                                await aprint(f"{color.RED}Token number {index+1} is account locked in some way{color.RESET}")
+                            elif status == 429:
+                                await aprint(f"{color.RED}Token number {index+1} check was incomplete, ratelimited{color.RESET}")
+                            elif status == 401:
+                                await aprint(f"{color.RED}Token number {index+1} is invalid!{color.RESET}")
+                            else:
+                                await aprint(f"{color.RED}Black magic occurred -- {status} -- {index+1}{color.RESET}")
+
         else:
             async with rm:
                 resp = await rm.request_pool([{"method":"get", "url":'https://canary.discordapp.com/api/v9/users/@me', "headers":{"Authorization": f'Bot {token}'}}for token in tokens])

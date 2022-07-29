@@ -56,6 +56,11 @@ async def main(url: str):
 
 
 
+
+
+
+
+
 # Scrapes from /community/discord
 # Finds forks too
 
@@ -129,5 +134,5 @@ async def scrape():
 
 
 if __name__ == "__main__":
-    asyncio.run(main("/@FishballNooodle/Discord-Bot"))
+    asyncio.run(main("/@Npgop/Saturn-bot"))
     # asyncio.run(scrape())
