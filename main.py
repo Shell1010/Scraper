@@ -129,10 +129,29 @@ async def scrape():
     # Bot check
     await repl.bot_check()
 
+async def validate():
+    repl = ReplIt()
+    lines_seen = set()
+    outfile = open("tokens.txt", "w")
+    for line in open("false_tokens.txt", "r"):
+        if line not in lines_seen:
+            outfile.write(line)
+            lines_seen.add(line)
+    outfile.close()
+    await repl.check()
+    # Bot check
+    await repl.bot_check()
+
 
 
 
 
 if __name__ == "__main__":
-    asyncio.run(main("/@Npgop/Saturn-bot"))
+    # Scrape forks from a url
+    asyncio.run(main("/@KabirJaipal/Verification-System"))
+
+    # Scrape from community/discord
     # asyncio.run(scrape())
+
+    # Validate tokens in false_tokens.txt
+    # asyncio.run(validate())

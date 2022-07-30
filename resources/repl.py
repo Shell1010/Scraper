@@ -107,6 +107,7 @@ class ReplIt:
                                     if len([fork['url'] for fork in forks]) > 0:
                                         urls += [fork['url'] for fork in forks]
                                         ids += [fork['id'] for fork in forks]
+                                        await asyncio.sleep(1)
                                     else:
                                         break
                                     if len(urls) >= int(count):
