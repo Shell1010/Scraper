@@ -12,8 +12,9 @@ from .request import RequestMaker
 from colorama import Fore as color
 import aiofiles
 
-
-uvloop.install()
+if os.name != "nt":
+    import uvloop
+    uvloop.install()
 
 class ReplIt:
     def __init__(self) -> None:
